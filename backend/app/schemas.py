@@ -1,6 +1,13 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+    field_validator,
+)
 
 from app.enums import TicketPriority, TicketStatus
 
@@ -46,3 +53,46 @@ class TicketStats(BaseModel):
     open_tickets: int
     in_progress_tickets: int
     resolved_tickets: int
+
+
+class UserRegistration(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    full_name: str = Field(min_length=1, max_length=200)
+    email: EmailStr
+    password: SecretStr
+
+    @field_validator("full_name")
+    @classmethod
+    def normalize_full_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Full name must not be blank.")
+        return value
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: SecretStr) -> SecretStr:
+        password = value.get_secret_value()
+        if not password.strip():
+            raise ValueError("Password must not be blank.")
+        if not 8 <= len(password) <= 128:
+            raise ValueError("Password must be between 8 and 128 characters.")
+        return value
+
+
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    full_name: str
+    email: EmailStr
+    role: str
+    created_at: datetime

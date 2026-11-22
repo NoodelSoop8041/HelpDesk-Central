@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum as PythonEnum
 
 from sqlalchemy import CheckConstraint, DateTime, Enum as SQLAlchemyEnum
-from sqlalchemy import String, Text, func
+from sqlalchemy import String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -67,4 +67,32 @@ class Ticket(Base):
         default=lambda: datetime.now(timezone.utc),
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_users_email"),
+        CheckConstraint(
+            "length(trim(full_name)) > 0",
+            name="ck_users_full_name_nonempty",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="employee",
+        server_default="employee",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
     )
