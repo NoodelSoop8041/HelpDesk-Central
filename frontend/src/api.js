@@ -2,6 +2,14 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:8000"
 ).trim().replace(/\/+$/, "");
 
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 function formatApiError(detail) {
   if (typeof detail === "string") {
     return detail;
@@ -49,7 +57,10 @@ async function request(path, options) {
 
   if (!response.ok) {
     const detail = formatApiError(responseData?.detail);
-    throw new Error(detail || `The API request failed (${response.status}).`);
+    throw new ApiError(
+      detail || `The API request failed (${response.status}).`,
+      response.status,
+    );
   }
 
   if (responseData === null) {
@@ -105,5 +116,13 @@ export function updateTicketStatus(ticketId, status) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
+  });
+}
+
+export function registerEmployee({ full_name, email, password }) {
+  return request("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ full_name, email, password }),
   });
 }

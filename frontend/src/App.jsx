@@ -5,6 +5,7 @@ import {
   getDashboardData,
   updateTicketStatus,
 } from "./api.js";
+import RegistrationPage from "./RegistrationPage.jsx";
 
 const initialForm = {
   title: "",
@@ -31,7 +32,7 @@ function statusClass(status) {
   return status.toLowerCase().replace(/\s+/g, "-");
 }
 
-function App() {
+function DashboardPage() {
   const [tickets, setTickets] = useState(null);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,6 +159,9 @@ function App() {
         <header className="topbar">
           <p>IT Service Desk <span>/</span> Dashboard</p>
           <div className="profile" aria-label="Help desk workspace">
+            <a className="register-nav-link" href="/register">
+              Employee registration
+            </a>
             <span className="profile-avatar" aria-hidden="true">HD</span>
             <span>Help Desk</span>
           </div>
@@ -532,6 +536,11 @@ function App() {
       </main>
     </div>
   );
+}
+
+function App() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return path === "/register" ? <RegistrationPage /> : <DashboardPage />;
 }
 
 export default App;
