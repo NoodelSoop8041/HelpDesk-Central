@@ -28,7 +28,7 @@ The goal is to improve communication between employees and IT personnel, increas
 - Browse the IT asset inventory and register assets.
 - Persist application data in PostgreSQL.
 
-The application is being developed incrementally. The initial local development foundation and a static dashboard shell are in place. The ticket API persists tickets in PostgreSQL; the dashboard is not yet connected to live ticket data. Asset features have not yet been implemented.
+The application is being developed incrementally. The ticket API persists tickets in PostgreSQL, and the dashboard displays live ticket data. Employee account registration is available; login and asset features have not yet been implemented.
 
 ## Run Locally with Docker Compose
 
@@ -87,6 +87,28 @@ curl.exe http://localhost:8000/api/tickets
 curl.exe http://localhost:8000/api/tickets/1
 curl.exe -X PATCH http://localhost:8000/api/tickets/1/status -H "Content-Type: application/json" -d '{"status":"In Progress"}'
 curl.exe http://localhost:8000/api/tickets/stats
+```
+
+## Employee Registration API
+
+`POST /api/auth/register` registers an employee account. The request requires `full_name`, a valid `email`, and a password between 8 and 128 characters. Email addresses are trimmed and lowercased, and duplicate addresses return HTTP 409. The role is assigned as `employee`; client-supplied extra fields such as `role` are rejected. Passwords are stored as Argon2id hashes and are never included in the response.
+
+Example request:
+
+```powershell
+curl.exe -X POST http://localhost:8000/api/auth/register -H "Content-Type: application/json" -d '{"full_name":"Riley Employee","email":"riley.employee@example.com","password":"Strong-test-password-23"}'
+```
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "full_name": "Riley Employee",
+  "email": "riley.employee@example.com",
+  "role": "employee",
+  "created_at": "2026-11-22T21:00:00Z"
+}
 ```
 
 Tables are initialized with SQLAlchemy `create_all` when the API starts. This keeps the MVP setup simple, but `create_all` does not migrate existing tables if the model schema changes; a migration approach will be needed before making incompatible schema changes.
