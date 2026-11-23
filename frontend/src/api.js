@@ -1,6 +1,8 @@
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:8000"
 ).trim().replace(/\/+$/, "");
+const ACCESS_TOKEN_STORAGE_KEY = "helpdesk.access-token";
+export const AUTH_SESSION_INVALID_EVENT = "helpdesk:session-invalid";
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -30,10 +32,93 @@ function formatApiError(detail) {
   return "";
 }
 
-async function request(path, options) {
-  let response;
+function readStoredSession() {
+  let serializedSession;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, options);
+    serializedSession = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+  if (!serializedSession) {
+    return null;
+  }
+
+  let session;
+  try {
+    session = JSON.parse(serializedSession);
+  } catch {
+    clearAccessToken();
+    return null;
+  }
+
+  if (
+    !session ||
+    typeof session !== "object" ||
+    Array.isArray(session) ||
+    typeof session.access_token !== "string" ||
+    !session.access_token ||
+    !Number.isFinite(session.expires_at) ||
+    session.expires_at <= Date.now()
+  ) {
+    clearAccessToken();
+    return null;
+  }
+
+  return session;
+}
+
+export function getAccessToken() {
+  return readStoredSession()?.access_token ?? null;
+}
+
+export function getAccessTokenExpiration() {
+  return readStoredSession()?.expires_at ?? null;
+}
+
+export function isAuthenticated() {
+  return getAccessToken() !== null;
+}
+
+export function storeAccessToken(accessToken, expiresIn) {
+  if (
+    typeof accessToken !== "string" ||
+    !accessToken ||
+    !Number.isSafeInteger(expiresIn) ||
+    expiresIn < 1 ||
+    expiresIn > 24 * 60 * 60
+  ) {
+    throw new Error("The API returned an invalid access token.");
+  }
+
+  sessionStorage.setItem(
+    ACCESS_TOKEN_STORAGE_KEY,
+    JSON.stringify({
+      access_token: accessToken,
+      expires_at: Date.now() + expiresIn * 1000,
+    }),
+  );
+}
+
+export function clearAccessToken() {
+  sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+}
+
+async function request(path, options = {}, includeAuth = true) {
+  let response;
+  let accessToken = null;
+  try {
+    const headers = { ...options.headers };
+    if (includeAuth) {
+      accessToken = getAccessToken();
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+    }
+
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+    });
   } catch (error) {
     if (error instanceof TypeError) {
       throw new Error(
@@ -41,6 +126,11 @@ async function request(path, options) {
       );
     }
     throw error;
+  }
+
+  if (response.status === 401 && accessToken) {
+    clearAccessToken();
+    window.dispatchEvent(new Event(AUTH_SESSION_INVALID_EVENT));
   }
 
   const responseText = await response.text();
@@ -125,4 +215,32 @@ export function registerEmployee({ full_name, email, password }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ full_name, email, password }),
   });
+}
+
+export async function loginEmployee({ email, password }) {
+  const tokenResponse = await request(
+    "/api/auth/login",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password,
+      }),
+    },
+    false,
+  );
+
+  if (
+    typeof tokenResponse?.access_token !== "string" ||
+    !tokenResponse.access_token ||
+    tokenResponse.token_type !== "bearer" ||
+    !Number.isSafeInteger(tokenResponse.expires_in) ||
+    tokenResponse.expires_in < 1 ||
+    tokenResponse.expires_in > 24 * 60 * 60
+  ) {
+    throw new Error("The API returned an unexpected login response.");
+  }
+
+  return tokenResponse;
 }

@@ -108,8 +108,17 @@ describe("RegistrationPage", () => {
     });
     expect(screen.queryByLabelText(/^Password/)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Return to dashboard" }),
+      screen.getByRole("link", { name: "Log in" }),
     ).toBeInTheDocument();
+  });
+
+  it("links existing employees to the login page", () => {
+    renderRegistrationPage();
+
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
   });
 
   it("shows a duplicate-email message and keeps non-password entries", async () => {

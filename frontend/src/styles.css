@@ -268,6 +268,75 @@ a {
   font-weight: 750;
 }
 
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.profile-dropdown {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4e5e6b;
+  cursor: pointer;
+  list-style: none;
+}
+
+.profile-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.profile-trigger:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid rgb(23 107 135 / 20%);
+  outline-offset: 3px;
+}
+
+.profile-chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.profile-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 130px;
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(23 33 43 / 12%);
+  padding: 5px;
+}
+
+.profile-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #42515e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  padding: 9px 10px;
+}
+
+.profile-menu button:hover,
+.profile-menu button:focus-visible {
+  background: #f0f6f8;
+  color: #176b87;
+}
+
 .dashboard-content {
   width: min(100%, 1250px);
   margin: 0 auto;
@@ -758,8 +827,13 @@ h1 {
     padding: 0 19px;
   }
 
-  .profile > span:last-child {
+  .profile-label {
     display: none;
+  }
+
+  .profile-identity,
+  .profile-trigger {
+    gap: 0;
   }
 
   .dashboard-content {
@@ -1289,6 +1363,38 @@ h1 {
 
 .registration-field input:disabled {
   background: #f7f8fa;
+  cursor: wait;
+}
+
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap input {
+  padding-right: 57px;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  color: #176b87;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  padding: 5px 2px;
+  transform: translateY(-50%);
+}
+
+.password-visibility-toggle:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid rgb(23 107 135 / 30%);
+}
+
+.password-visibility-toggle:disabled {
   cursor: wait;
 }
 

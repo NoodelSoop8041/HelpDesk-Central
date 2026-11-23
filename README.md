@@ -85,7 +85,7 @@ docker compose run --build --rm --no-deps backend pytest
 
 ## Frontend Tests
 
-Run the registration form tests in the frontend container:
+Run the frontend login and registration tests in the frontend container:
 
 ```sh
 docker compose run --build --rm --no-deps frontend npm test
@@ -162,3 +162,9 @@ Example response:
 Configure `JWT_SECRET_KEY` with a randomly generated value of at least 32 characters. `JWT_ALGORITHM` defaults to `HS256` (only HMAC SHA-2 algorithms are accepted), and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` defaults to `30` and must be between 1 and 1440. If the secret is missing or invalid, login and token-authenticated dependencies return HTTP 503; ticket endpoints and other unrelated API functionality remain available.
 
 Authenticated routes can use the reusable `get_current_user` dependency. Send a token using `Authorization: Bearer <access_token>`. Ticket routes are currently public and do not yet require authentication.
+
+## Frontend Login
+
+Open <http://localhost:5173/login> to log in with an employee account. A successful login returns to the dashboard. Use the profile menu to log out; the current session is also cleared when the API rejects the token or its reported expiration time is reached.
+
+The frontend keeps the bearer token in tab-scoped `sessionStorage` because the backend currently issues tokens in JSON and does not provide secure HttpOnly cookies. JavaScript running on the page can read this token, so `sessionStorage` does not protect it from cross-site scripting (XSS). For production, prefer a backend-managed `Secure`, `HttpOnly`, appropriately `SameSite` cookie and add the corresponding CSRF protections.
