@@ -193,6 +193,22 @@ export async function getDashboardData() {
   return { tickets, stats };
 }
 
+export async function getAssets() {
+  const assets = await request("/api/assets");
+  if (!Array.isArray(assets)) {
+    throw new Error("The API returned an unexpected asset list.");
+  }
+  return assets;
+}
+
+export function createAsset(asset) {
+  return request("/api/assets", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(asset),
+  });
+}
+
 export function createTicket(ticket) {
   return request("/api/tickets", {
     method: "POST",

@@ -10,7 +10,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.enums import TicketPriority, TicketStatus
+from app.enums import AssetStatus, TicketPriority, TicketStatus
 
 
 def normalize_email_address(value: object) -> object:
@@ -69,6 +69,64 @@ class TicketStats(BaseModel):
     open_tickets: int
     in_progress_tickets: int
     resolved_tickets: int
+
+
+class AssetCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    asset_tag: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=200)
+    category: str | None = Field(default=None, max_length=100)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    model: str | None = Field(default=None, max_length=200)
+    serial_number: str | None = Field(default=None, max_length=200)
+    status: AssetStatus = AssetStatus.AVAILABLE
+    assigned_employee: str | None = Field(default=None, max_length=200)
+
+    @field_validator("asset_tag")
+    @classmethod
+    def normalize_asset_tag(cls, value: str) -> str:
+        value = value.strip().upper()
+        if not value:
+            raise ValueError("Asset tag must not be blank.")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def normalize_asset_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Asset name must not be blank.")
+        return value
+
+    @field_validator(
+        "category",
+        "manufacturer",
+        "model",
+        "serial_number",
+        "assigned_employee",
+    )
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized_value = value.strip()
+        return normalized_value or None
+
+
+class AssetRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    asset_tag: str
+    name: str
+    category: str | None
+    manufacturer: str | None
+    model: str | None
+    serial_number: str | None
+    status: AssetStatus
+    assigned_employee: str | None
+    created_at: datetime
 
 
 class UserRegistration(BaseModel):
