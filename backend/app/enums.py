@@ -11,3 +11,10 @@ class TicketStatus(str, Enum):
     OPEN = "Open"
     IN_PROGRESS = "In Progress"
     RESOLVED = "Resolved"
+
+
+class AssetStatus(str, Enum):
+    AVAILABLE = "Available"
+    ASSIGNED = "Assigned"
+    IN_REPAIR = "In Repair"
+    RETIRED = "Retired"

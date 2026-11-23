@@ -6,7 +6,7 @@ from sqlalchemy import String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
-from app.enums import TicketPriority, TicketStatus
+from app.enums import AssetStatus, TicketPriority, TicketStatus
 
 
 def enum_values(enum_type: type[PythonEnum]) -> list[str]:
@@ -90,6 +90,48 @@ class User(Base):
         default="employee",
         server_default="employee",
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
+
+
+class Asset(Base):
+    __tablename__ = "assets"
+    __table_args__ = (
+        UniqueConstraint("asset_tag", name="uq_assets_asset_tag"),
+        CheckConstraint(
+            "length(trim(asset_tag)) > 0",
+            name="ck_assets_asset_tag_nonempty",
+        ),
+        CheckConstraint(
+            "length(trim(name)) > 0",
+            name="ck_assets_name_nonempty",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_tag: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(100))
+    manufacturer: Mapped[str | None] = mapped_column(String(200))
+    model: Mapped[str | None] = mapped_column(String(200))
+    serial_number: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[AssetStatus] = mapped_column(
+        SQLAlchemyEnum(
+            AssetStatus,
+            name="asset_status",
+            native_enum=False,
+            create_constraint=True,
+            values_callable=enum_values,
+        ),
+        nullable=False,
+        default=AssetStatus.AVAILABLE,
+        server_default=AssetStatus.AVAILABLE.value,
+    )
+    assigned_employee: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
