@@ -10,7 +10,9 @@ import {
   isAuthenticated,
   updateTicketStatus,
 } from "./api.js";
+import AssetsPage from "./AssetsPage.jsx";
 import LoginPage from "./LoginPage.jsx";
+import ProfileMenu from "./ProfileMenu.jsx";
 import RegistrationPage from "./RegistrationPage.jsx";
 
 const initialForm = {
@@ -149,7 +151,7 @@ function DashboardPage({ isUserAuthenticated, onLogout }) {
             Tickets
             <span className="nav-count">{navTicketCount}</span>
           </a>
-          <a className="nav-link" href="#asset-inventory">
+          <a className="nav-link" href="/assets">
             <span className="nav-icon asset-icon" aria-hidden="true" />
             Assets
           </a>
@@ -164,35 +166,10 @@ function DashboardPage({ isUserAuthenticated, onLogout }) {
       <main className="main-content" id="dashboard">
         <header className="topbar">
           <p>IT Service Desk <span>/</span> Dashboard</p>
-          <div className="profile" aria-label="Help desk workspace">
-            {!isUserAuthenticated && (
-              <a className="register-nav-link" href="/login">
-                Log in
-              </a>
-            )}
-            <a className="register-nav-link" href="/register">
-              Register
-            </a>
-            {isUserAuthenticated ? (
-              <details className="profile-dropdown">
-                <summary className="profile-trigger" aria-label="Profile menu">
-                  <span className="profile-avatar" aria-hidden="true">HD</span>
-                  <span className="profile-label">Help Desk</span>
-                  <span className="profile-chevron" aria-hidden="true" />
-                </summary>
-                <div className="profile-menu">
-                  <button type="button" onClick={onLogout}>
-                    Log out
-                  </button>
-                </div>
-              </details>
-            ) : (
-              <div className="profile-identity">
-                <span className="profile-avatar" aria-hidden="true">HD</span>
-                <span className="profile-label">Help Desk</span>
-              </div>
-            )}
-          </div>
+          <ProfileMenu
+            isUserAuthenticated={isUserAuthenticated}
+            onLogout={onLogout}
+          />
         </header>
 
         <div className="dashboard-content">
@@ -441,13 +418,13 @@ function DashboardPage({ isUserAuthenticated, onLogout }) {
                     </div>
                     <span className="asset-icon panel-asset-icon" aria-hidden="true" />
                   </div>
-                  <div className="asset-empty">
-                    <span className="asset-count asset-coming-soon">Soon</span>
+                  <a className="asset-empty asset-overview-link" href="/assets">
+                    <span className="asset-count">View</span>
                     <div>
-                      <strong>Asset tracking coming soon</strong>
-                      <p>Asset data is not part of this ticket API.</p>
+                      <strong>Browse asset inventory</strong>
+                      <p>View and register IT equipment.</p>
                     </div>
-                  </div>
+                  </a>
                 </section>
               </div>
               <p className="data-footnote">
@@ -660,6 +637,14 @@ function App() {
 
   if (path === "/register") {
     return <RegistrationPage />;
+  }
+  if (path === "/assets") {
+    return (
+      <AssetsPage
+        isUserAuthenticated={userIsAuthenticated}
+        onLogout={handleLogout}
+      />
+    );
   }
   if (path === "/login" && !userIsAuthenticated) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;

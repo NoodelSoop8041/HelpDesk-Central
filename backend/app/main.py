@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.auth import router as auth_router
+from app.assets import router as assets_router
 from app.database import Base, engine
 from app import models
 from app.tickets import router as tickets_router
@@ -36,6 +37,7 @@ app.add_middleware(
 )
 
 app.include_router(tickets_router)
+app.include_router(assets_router)
 app.include_router(auth_router)
 
 

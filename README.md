@@ -28,7 +28,7 @@ The goal is to improve communication between employees and IT personnel, increas
 - Browse the IT asset inventory and register assets.
 - Persist application data in PostgreSQL.
 
-The application is being developed incrementally. The ticket API persists tickets in PostgreSQL, and the dashboard displays live ticket data. Employee registration and the backend login API are available; asset management is not yet implemented.
+The application is being developed incrementally. The ticket API persists tickets in PostgreSQL, and the dashboard displays live ticket data. Employee registration, login, and a basic asset inventory are available.
 
 ## Run Locally with Docker Compose
 
@@ -85,7 +85,7 @@ docker compose run --build --rm --no-deps backend pytest
 
 ## Frontend Tests
 
-Run the frontend login and registration tests in the frontend container:
+Run the frontend login, registration, and asset inventory tests in the frontend container:
 
 ```sh
 docker compose run --build --rm --no-deps frontend npm test
@@ -162,6 +162,24 @@ Example response:
 Configure `JWT_SECRET_KEY` with a randomly generated value of at least 32 characters. `JWT_ALGORITHM` defaults to `HS256` (only HMAC SHA-2 algorithms are accepted), and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` defaults to `30` and must be between 1 and 1440. If the secret is missing or invalid, login and token-authenticated dependencies return HTTP 503; ticket endpoints and other unrelated API functionality remain available.
 
 Authenticated routes can use the reusable `get_current_user` dependency. Send a token using `Authorization: Bearer <access_token>`. Ticket routes are currently public and do not yet require authentication.
+
+## Asset Inventory
+
+Open <http://localhost:5173/assets> or select **Assets** in the dashboard navigation to view and register IT equipment. The inventory includes asset tag, name, category, manufacturer, model, serial number, status, and an optional assigned employee name. Asset tags are trimmed and stored in uppercase; tags must be unique, and duplicates return HTTP 409. The default status is `Available`; accepted statuses are `Available`, `Assigned`, `In Repair`, and `Retired`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/assets` | List assets sorted by asset tag |
+| `POST` | `/api/assets` | Register an asset |
+
+Asset registration requires `asset_tag` and `name`. Other inventory details are optional. Example requests (run from PowerShell using `curl.exe`):
+
+```powershell
+curl.exe -X POST http://localhost:8000/api/assets -H "Content-Type: application/json" -d '{"asset_tag":"it-1001","name":"Staff laptop","category":"Laptop","manufacturer":"Lenovo","model":"ThinkPad T14","serial_number":"SN-1001","status":"Assigned","assigned_employee":"Riley Employee"}'
+curl.exe http://localhost:8000/api/assets
+```
+
+The `assets` table is created by the existing SQLAlchemy `create_all` startup initialization. Adding this model creates the new table if it is absent; it does not drop, reset, or alter existing ticket or user tables/data. `create_all` is not a general schema migration tool, so future changes to existing table structures will require a migration strategy.
 
 ## Frontend Login
 
