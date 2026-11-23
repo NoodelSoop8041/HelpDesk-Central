@@ -168,3 +168,41 @@ Authenticated routes can use the reusable `get_current_user` dependency. Send a 
 Open <http://localhost:5173/login> to log in with an employee account. A successful login returns to the dashboard. Use the profile menu to log out; the current session is also cleared when the API rejects the token or its reported expiration time is reached.
 
 The frontend keeps the bearer token in tab-scoped `sessionStorage` because the backend currently issues tokens in JSON and does not provide secure HttpOnly cookies. JavaScript running on the page can read this token, so `sessionStorage` does not protect it from cross-site scripting (XSS). For production, prefer a backend-managed `Secure`, `HttpOnly`, appropriately `SameSite` cookie and add the corresponding CSRF protections.
+
+## Google Cloud Deployment
+
+HelpDesk Central has been manually deployed to Google Cloud Run as part of the Unit 12 MVP deployment attempt.
+
+### Deployment Services
+
+| Service | URL |
+|---|---|
+| Frontend | https://helpdesk-frontend-1004901622672.us-central1.run.app |
+| Backend | https://helpdesk-backend-1004901622672.us-central1.run.app |
+| Backend API Documentation | https://helpdesk-backend-1004901622672.us-central1.run.app/docs |
+
+- **Deployment platform:** Google Cloud Run
+- **Region:** `us-central1`
+- **Deployment approach:** Manual deployment using Google Cloud CLI and Cloud Run source deployment
+
+The frontend and backend services have been deployed and their service URLs obtained. However, full application functionality in the cloud environment has not yet been verified. Database connectivity, API configuration, and frontend-to-backend communication may require additional configuration and troubleshooting.
+
+This deployment represents a manual deployment attempt for the MVP and does not represent a completed automated CI/CD deployment.
+
+## AI-Assisted Development
+
+AI tools were used throughout development to assist with implementation, troubleshooting, testing, planning, and documentation.
+
+- **GitHub Copilot:** Assisted with implementation, code generation, debugging, and test development within the development environment.
+- **ChatGPT:** Assisted with project planning, architecture review, troubleshooting, deployment guidance, code review, and documentation.
+
+AI-generated suggestions were reviewed and tested where applicable. Implementation and deployment status are documented based on actual testing and verification rather than AI-generated claims.
+
+## Known Limitations
+
+- Ticket viewing and management remain intentionally basic for the MVP.
+- Ticket endpoints are not yet protected by authentication-based authorization.
+- Full Google Cloud application functionality has not yet been verified.
+- Production database connectivity and frontend-to-backend integration require additional verification.
+- The current frontend token storage approach uses `sessionStorage` and is not suitable for a security-sensitive production environment without additional protections.
+- Database schema initialization uses SQLAlchemy `create_all`; a migration strategy is needed for future schema changes.
