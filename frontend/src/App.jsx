@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  AUTH_SESSION_INVALID_EVENT,
+  clearAccessToken,
   createTicket,
+  getAccessToken,
+  getAccessTokenExpiration,
   getDashboardData,
+  isAuthenticated,
   updateTicketStatus,
 } from "./api.js";
+import LoginPage from "./LoginPage.jsx";
 import RegistrationPage from "./RegistrationPage.jsx";
 
 const initialForm = {
@@ -32,7 +38,7 @@ function statusClass(status) {
   return status.toLowerCase().replace(/\s+/g, "-");
 }
 
-function DashboardPage() {
+function DashboardPage({ isUserAuthenticated, onLogout }) {
   const [tickets, setTickets] = useState(null);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -159,11 +165,33 @@ function DashboardPage() {
         <header className="topbar">
           <p>IT Service Desk <span>/</span> Dashboard</p>
           <div className="profile" aria-label="Help desk workspace">
+            {!isUserAuthenticated && (
+              <a className="register-nav-link" href="/login">
+                Log in
+              </a>
+            )}
             <a className="register-nav-link" href="/register">
-              Employee registration
+              Register
             </a>
-            <span className="profile-avatar" aria-hidden="true">HD</span>
-            <span>Help Desk</span>
+            {isUserAuthenticated ? (
+              <details className="profile-dropdown">
+                <summary className="profile-trigger" aria-label="Profile menu">
+                  <span className="profile-avatar" aria-hidden="true">HD</span>
+                  <span className="profile-label">Help Desk</span>
+                  <span className="profile-chevron" aria-hidden="true" />
+                </summary>
+                <div className="profile-menu">
+                  <button type="button" onClick={onLogout}>
+                    Log out
+                  </button>
+                </div>
+              </details>
+            ) : (
+              <div className="profile-identity">
+                <span className="profile-avatar" aria-hidden="true">HD</span>
+                <span className="profile-label">Help Desk</span>
+              </div>
+            )}
           </div>
         </header>
 
@@ -538,9 +566,111 @@ function DashboardPage() {
   );
 }
 
+function getCurrentPath() {
+  return window.location.pathname.replace(/\/+$/, "") || "/";
+}
+
 function App() {
-  const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  return path === "/register" ? <RegistrationPage /> : <DashboardPage />;
+  const [path, setPath] = useState(getCurrentPath);
+  const [accessToken, setAccessToken] = useState(getAccessToken);
+  const userIsAuthenticated = Boolean(accessToken) && isAuthenticated();
+
+  const navigate = useCallback((nextPath, replace = false) => {
+    if (replace) {
+      window.history.replaceState(null, "", nextPath);
+    } else {
+      window.history.pushState(null, "", nextPath);
+    }
+    setPath(nextPath);
+  }, []);
+
+  useEffect(() => {
+    function handlePopState() {
+      setPath(getCurrentPath());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    function handleInvalidSession() {
+      clearAccessToken();
+      setAccessToken(null);
+      navigate("/login", true);
+    }
+
+    window.addEventListener(
+      AUTH_SESSION_INVALID_EVENT,
+      handleInvalidSession,
+    );
+    return () =>
+      window.removeEventListener(
+        AUTH_SESSION_INVALID_EVENT,
+        handleInvalidSession,
+      );
+  }, [navigate]);
+
+  useEffect(() => {
+    if (path === "/login" && userIsAuthenticated) {
+      navigate("/", true);
+    }
+  }, [navigate, path, userIsAuthenticated]);
+
+  useEffect(() => {
+    if (!userIsAuthenticated) {
+      return undefined;
+    }
+
+    const expiresAt = getAccessTokenExpiration();
+    if (!expiresAt) {
+      clearAccessToken();
+      setAccessToken(null);
+      navigate("/login", true);
+      return undefined;
+    }
+
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      clearAccessToken();
+      setAccessToken(null);
+      navigate("/login", true);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      clearAccessToken();
+      setAccessToken(null);
+      navigate("/login", true);
+    }, remaining);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [navigate, userIsAuthenticated]);
+
+  const handleLoginSuccess = useCallback(() => {
+    setAccessToken(getAccessToken());
+    navigate("/", true);
+  }, [navigate]);
+
+  const handleLogout = useCallback(() => {
+    clearAccessToken();
+    setAccessToken(null);
+    navigate("/login", true);
+  }, [navigate]);
+
+  if (path === "/register") {
+    return <RegistrationPage />;
+  }
+  if (path === "/login" && !userIsAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return (
+    <DashboardPage
+      isUserAuthenticated={userIsAuthenticated}
+      onLogout={handleLogout}
+    />
+  );
 }
 
 export default App;

@@ -28,12 +28,13 @@ The goal is to improve communication between employees and IT personnel, increas
 - Browse the IT asset inventory and register assets.
 - Persist application data in PostgreSQL.
 
-The application is being developed incrementally. The ticket API persists tickets in PostgreSQL, and the dashboard displays live ticket data. Employee account registration is available; login and asset features have not yet been implemented.
+The application is being developed incrementally. The ticket API persists tickets in PostgreSQL, and the dashboard displays live ticket data. Employee registration and the backend login API are available; asset management is not yet implemented.
 
 ## Run Locally with Docker Compose
 
-1. Copy `.env.example` to `.env` and replace the sample PostgreSQL password with a local value.
+1. Copy `.env.example` to `.env`, replace the sample PostgreSQL password, and set a random JWT secret.
    In PowerShell, run `Copy-Item .env.example .env`.
+   Generate a secret with `py -c "import secrets; print(secrets.token_urlsafe(48))"` and assign its output to `JWT_SECRET_KEY` in `.env`. Do not commit `.env` or share the generated secret.
 2. Start the services from the repository root:
 
    ```sh
@@ -84,7 +85,7 @@ docker compose run --build --rm --no-deps backend pytest
 
 ## Frontend Tests
 
-Run the registration form tests in the frontend container:
+Run the frontend login and registration tests in the frontend container:
 
 ```sh
 docker compose run --build --rm --no-deps frontend npm test
@@ -137,3 +138,33 @@ Example response:
 ```
 
 Tables are initialized with SQLAlchemy `create_all` when the API starts. This keeps the MVP setup simple, but `create_all` does not migrate existing tables if the model schema changes; a migration approach will be needed before making incompatible schema changes.
+
+## Employee Login API
+
+`POST /api/auth/login` accepts a normalized email address and password. Valid credentials return a signed JWT access token; invalid email or password returns the same HTTP 401 response. The token includes the user ID as `sub`, plus `iat` and `exp` claims. The default lifetime is 30 minutes.
+
+Example request:
+
+```powershell
+curl.exe -X POST http://localhost:8000/api/auth/login -H "Content-Type: application/json" -d '{"email":"riley.employee@example.com","password":"<account-password>"}'
+```
+
+Example response:
+
+```json
+{
+  "access_token": "<signed JWT>",
+  "token_type": "bearer",
+  "expires_in": 1800
+}
+```
+
+Configure `JWT_SECRET_KEY` with a randomly generated value of at least 32 characters. `JWT_ALGORITHM` defaults to `HS256` (only HMAC SHA-2 algorithms are accepted), and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` defaults to `30` and must be between 1 and 1440. If the secret is missing or invalid, login and token-authenticated dependencies return HTTP 503; ticket endpoints and other unrelated API functionality remain available.
+
+Authenticated routes can use the reusable `get_current_user` dependency. Send a token using `Authorization: Bearer <access_token>`. Ticket routes are currently public and do not yet require authentication.
+
+## Frontend Login
+
+Open <http://localhost:5173/login> to log in with an employee account. A successful login returns to the dashboard. Use the profile menu to log out; the current session is also cleared when the API rejects the token or its reported expiration time is reached.
+
+The frontend keeps the bearer token in tab-scoped `sessionStorage` because the backend currently issues tokens in JSON and does not provide secure HttpOnly cookies. JavaScript running on the page can read this token, so `sessionStorage` does not protect it from cross-site scripting (XSS). For production, prefer a backend-managed `Secure`, `HttpOnly`, appropriately `SameSite` cookie and add the corresponding CSRF protections.

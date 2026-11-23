@@ -142,11 +142,11 @@ function RegistrationPage() {
                 {createdAccount.email}).
               </p>
               <p className="registration-login-note">
-                Sign-in is not available yet. Your account has not been
-                automatically signed in.
+                Your account has not been automatically signed in. Log in to
+                start using HelpDesk Central.
               </p>
-              <a className="button-primary registration-submit" href="/">
-                Return to dashboard
+              <a className="button-primary registration-submit" href="/login">
+                Log in
               </a>
             </div>
           ) : (
@@ -324,7 +324,7 @@ function RegistrationPage() {
               </form>
 
               <p className="registration-footer">
-                Already have an account? Login is not available yet.
+                Already have an account? <a href="/login">Log in</a>
                 <br />
                 <a href="/">Return to dashboard</a>
               </p>
