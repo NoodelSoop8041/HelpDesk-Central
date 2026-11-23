@@ -32,7 +32,7 @@ The application is being developed incrementally. The ticket API persists ticket
 
 ## Run Locally with Docker Compose
 
-1. Copy `.env.example` to `.env` and adjust the local PostgreSQL settings if needed.
+1. Copy `.env.example` to `.env` and replace the sample PostgreSQL password with a local value.
    In PowerShell, run `Copy-Item .env.example .env`.
 2. Start the services from the repository root:
 
@@ -43,6 +43,23 @@ The application is being developed incrementally. The ticket API persists ticket
 3. Open the frontend at <http://localhost:5173>. The backend health endpoint is at <http://localhost:8000/health>, and its interactive API documentation is at <http://localhost:8000/docs>.
 
 The Compose setup starts the React/Vite frontend, FastAPI backend, and PostgreSQL database. The database uses a named Docker volume so its data remains across container restarts. Stop the services with `docker compose down`.
+
+### Access from another device on your network
+
+The default CORS allowlist supports `localhost` and `127.0.0.1`. To open the app from another device, use the host computer's LAN IPv4 address (not a Docker container IP such as `172.19.0.4`) and add it to `.env`. For example:
+
+```env
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.20:5173
+VITE_API_URL=http://192.168.1.20:8000
+```
+
+Replace `192.168.1.20` with the host address shown by `ipconfig`. Recreate the frontend and backend so they load the updated values:
+
+```sh
+docker compose up -d --force-recreate backend frontend
+```
+
+The host firewall must also allow inbound connections on ports 5173 and 8000. Only add origins you control; the API does not use a wildcard CORS policy.
 
 To run FastAPI directly on your host instead, install the packages from `backend/requirements.txt`, make sure PostgreSQL is reachable from the host, and set its URL before starting Uvicorn. For example, in PowerShell:
 
@@ -63,6 +80,14 @@ The backend tests use an isolated in-memory SQLite database and do not require t
 
 ```sh
 docker compose run --build --rm --no-deps backend pytest
+```
+
+## Frontend Tests
+
+Run the registration form tests in the frontend container:
+
+```sh
+docker compose run --build --rm --no-deps frontend npm test
 ```
 
 ## Ticket API

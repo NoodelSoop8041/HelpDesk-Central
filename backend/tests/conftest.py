@@ -1,6 +1,9 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["CORS_ORIGINS"] = (
+    "http://localhost:5173,http://127.0.0.1:5173"
+)
 
 import pytest
 from fastapi.testclient import TestClient
